@@ -22,8 +22,8 @@ class StockMovementController extends Controller
     {
         $batches = MedicineBatch::with('medicine')
                     ->where('status', true)
-                    ->where('quantity', '>', 0)
-                    ->orderByDesc('expires_at')
+                    // ->where('quantity', '>', 0)
+                    ->orderByDesc('expires_at', 'asc')
                     ->get();
 
         return view('stock_movements.adjustment', compact('batches'));

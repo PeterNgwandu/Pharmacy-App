@@ -61,8 +61,8 @@
                         Sales and POS
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ route('medicines.index') }}">Medicine Master</a></li>
-                        <li><a class="dropdown-item" href="{{ route('users.create') }}">Manage Category & Dosage Form</a></li>
+                        <li><a class="dropdown-item" href="{{ route('sales.index') }}">Sales List</a></li>
+                        <li><a class="dropdown-item" href="{{ route('sales.create') }}">Create Sales</a></li>
                     </ul>
                 </div>
 

@@ -56,7 +56,7 @@
 
                         {{-- Adjustment Type --}}
                         <div class="col-md-2 mb-3">
-                            <label for="adjustment_type" id="adjustment_type" class="form-label">Adjustment Type</label>
+                            <label for="adjustment_type" class="form-label">Adjustment Type</label>
                             <select name="adjustment_type" id="adjustment_type" class="form-select" required>
                                 <option value="">Select Adjustment Type</option>
 

@@ -46,4 +46,9 @@ class MedicineBatch extends Model
     {
         return $this->hasMany(StockMovement::class);
     }
+
+    public function SaleItemBatches(): HasMany
+    {
+        return $this->hasMany(SaleItemBatch::class);
+    }
 }

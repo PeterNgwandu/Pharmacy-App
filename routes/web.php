@@ -7,6 +7,7 @@ use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SalesController;
 use App\Models\StockMovement;
 use Illuminate\Support\Facades\Route;
 
@@ -65,5 +66,12 @@ Route::post('/medicine/stock-movement/adjustment', [StockMovementController::cla
 
 // FEFO
 Route::get('/medicine/batches/fefo', [MedicineBatchController::class, 'testFefo'])->name('medicine_batches.fefo');
+
+// Sales / POS
+Route::get('pos/sales', [SalesController::class, 'index'])->name('sales.index');
+Route::get('pos/sales/create', [SalesController::class, 'create'])->name('sales.create');
+Route::post('pos/sales/', [SalesController::class, 'store'])->name('sales.store');
+Route::get('pos/sales/{sales}', [SalesController::class, 'show'])->name('sales.show');
+Route::post('pos/sales/preview', [SalesController::class, 'preview'])->name('sales.preview');
 
 require __DIR__.'/auth.php';

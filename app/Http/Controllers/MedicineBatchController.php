@@ -132,7 +132,7 @@ class MedicineBatchController extends Controller
             'expires_at' => ['required', 'date', 'after:manufactured_at'],
             'purchase_price' => ['required', 'numeric', 'min:0'],
             'selling_price' => ['required', 'numeric', 'min:0'],
-            'quantity' => ['required', 'numeric', 'min:1'],
+            // 'quantity' => ['required', 'numeric', 'min:1'],
             'status' => ['required', 'boolean'],
         ]);
 
@@ -142,7 +142,7 @@ class MedicineBatchController extends Controller
             'expires_at' => $request->expires_at,
             'purchase_price' => $request->purchase_price,
             'selling_price' => $request->selling_price,
-            'quantity' => $request->quantity,
+            // 'quantity' => $request->quantity,
             'status' => $request->status,
         ]);
 
