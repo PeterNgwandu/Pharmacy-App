@@ -34,7 +34,7 @@ class SaleItem extends Model
 
     public function batches(): HasMany
     {
-        return $this->hasMany(SaleItemBatch::class);
+        return $this->hasMany(SaleItemBatch::class, 'sale_item_id');
     }
 
 }

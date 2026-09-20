@@ -263,7 +263,7 @@
                                     <div class="border rounded bg-light p-3">
 
                                         <h2 class="mb-0 text-end">
-                                            <span id="grandTotal">0.00</span>
+                                            <span id="paymentTotal">0.00</span>
                                         </h2>
 
                                     </div>
@@ -348,76 +348,194 @@
 
 </body>
 
+```html
 <script>
 
     document.addEventListener('DOMContentLoaded', function () {
 
+        /*
+        |--------------------------------------------------------------------------
+        | Cart
+        |--------------------------------------------------------------------------
+        */
+
         let cart = [];
 
 
-        // Elements
-        const medicineSelect = document.getElementById('medicine_select');
-        const quantityInput = document.getElementById('medicine_quantity');
-        const addMedicineButton = document.getElementById('addMedicineButton');
+        /*
+        |--------------------------------------------------------------------------
+        | Current Sale Total
+        |--------------------------------------------------------------------------
+        */
 
-        const cartBody = document.getElementById('cartBody');
-        const cartItemCount = document.getElementById('cartItemCount');
-        const grandTotal = document.getElementById('grandTotal');
+        let currentTotal = 0;
 
 
-        // Add medicine to cart
+        /*
+        |--------------------------------------------------------------------------
+        | Cart Elements
+        |--------------------------------------------------------------------------
+        */
+
+        const medicineSelect =
+            document.getElementById('medicine_select');
+
+        const quantityInput =
+            document.getElementById('medicine_quantity');
+
+        const addMedicineButton =
+            document.getElementById('addMedicineButton');
+
+        const cartBody =
+            document.getElementById('cartBody');
+
+        const cartItemCount =
+            document.getElementById('cartItemCount');
+
+        const grandTotal =
+            document.getElementById('grandTotal');
+
+        const paymentTotal =
+            document.getElementById('paymentTotal');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Elements
+        |--------------------------------------------------------------------------
+        */
+
+        const paymentMethod =
+            document.getElementById('payment_method');
+
+        const paymentAmount =
+            document.getElementById('payment_amount');
+
+        const changeAmount =
+            document.getElementById('changeAmount');
+
+        const salesForm =
+            document.getElementById('salesForm');
+
+        const completeSaleButton =
+            document.getElementById('completeSaleButton');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Format Money
+        |--------------------------------------------------------------------------
+        */
+
+        function formatMoney(value) {
+
+            return Number(value || 0).toLocaleString('en-US', {
+
+                minimumFractionDigits: 0,
+
+                maximumFractionDigits: 0
+
+            });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Add Medicine To Cart
+        |--------------------------------------------------------------------------
+        */
+
         addMedicineButton.addEventListener('click', function () {
 
-            const medicineId = medicineSelect.value;
+            const medicineId =
+                medicineSelect.value;
 
             const selectedOption =
-                medicineSelect.options[medicineSelect.selectedIndex];
+                medicineSelect.options[
+                    medicineSelect.selectedIndex
+                ];
 
             const quantity =
                 parseInt(quantityInput.value);
 
 
-            // Validate medicine
+            /*
+            |----------------------------------------------------------------------
+            | Validate Medicine
+            |----------------------------------------------------------------------
+            */
+
             if (!medicineId) {
 
                 alert('Please select a medicine.');
 
+                medicineSelect.focus();
+
                 return;
             }
 
 
-            // Validate quantity
+            /*
+            |----------------------------------------------------------------------
+            | Validate Quantity
+            |----------------------------------------------------------------------
+            */
+
             if (!quantity || quantity < 1) {
 
                 alert('Please enter a valid quantity.');
 
+                quantityInput.focus();
+
                 return;
             }
 
 
-            // Check if medicine already exists in cart
-            const existingItem = cart.find(function (item) {
+            /*
+            |----------------------------------------------------------------------
+            | Check If Medicine Already Exists
+            |----------------------------------------------------------------------
+            */
 
-                return item.medicine_id == medicineId;
+            const existingItem =
+                cart.find(function (item) {
 
-            });
+                    return item.medicine_id == medicineId;
 
+                });
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Increase Existing Quantity
+            |----------------------------------------------------------------------
+            */
 
             if (existingItem) {
 
-                // Increase existing quantity
                 existingItem.quantity += quantity;
 
-            } else {
+            }
 
-                // Add new medicine
+
+            /*
+            |----------------------------------------------------------------------
+            | Add New Medicine
+            |----------------------------------------------------------------------
+            */
+
+            else {
+
                 cart.push({
 
                     medicine_id: medicineId,
 
-                    name: selectedOption.textContent.trim(),
+                    name:
+                        selectedOption.textContent.trim(),
 
-                    pack_unit: selectedOption.dataset.packUnit ?? '',
+                    pack_unit:
+                        selectedOption.dataset.packUnit ?? '',
 
                     quantity: quantity,
 
@@ -430,11 +548,21 @@
             }
 
 
-            // Refresh cart
+            /*
+            |----------------------------------------------------------------------
+            | Render Cart
+            |----------------------------------------------------------------------
+            */
+
             renderCart();
 
 
-            // Reset medicine selection
+            /*
+            |----------------------------------------------------------------------
+            | Reset Medicine Inputs
+            |----------------------------------------------------------------------
+            */
+
             medicineSelect.value = '';
 
             quantityInput.value = 1;
@@ -444,17 +572,27 @@
         });
 
 
-        // Render cart
-        function renderCart()
-        {
+        /*
+        |--------------------------------------------------------------------------
+        | Render Cart
+        |--------------------------------------------------------------------------
+        */
+
+        function renderCart() {
 
             cartBody.innerHTML = '';
 
 
-            // Empty cart
+            /*
+            |----------------------------------------------------------------------
+            | Empty Cart
+            |----------------------------------------------------------------------
+            */
+
             if (cart.length === 0) {
 
                 cartBody.innerHTML = `
+
                     <tr id="emptyCartRow">
 
                         <td colspan="7"
@@ -465,20 +603,32 @@
                         </td>
 
                     </tr>
+
                 `;
 
-                cartItemCount.textContent = '0 Items';
 
-                grandTotal.textContent = '0.00';
+                cartItemCount.textContent =
+                    '0 Items';
+
+
+                updateGrandTotal(0);
+
+                generateHiddenInputs();
 
                 return;
             }
 
 
-            // Cart items
+            /*
+            |----------------------------------------------------------------------
+            | Display Cart Items
+            |----------------------------------------------------------------------
+            */
+
             cart.forEach(function (item, index) {
 
-                const row = document.createElement('tr');
+                const row =
+                    document.createElement('tr');
 
 
                 row.innerHTML = `
@@ -487,51 +637,62 @@
                         ${index + 1}
                     </td>
 
-
                     <td>
-
                         <strong>
                             ${item.name}
                         </strong>
-
                     </td>
-
 
                     <td>
 
                         <input type="number"
+
                             class="form-control form-control-sm cart-quantity"
+
                             min="1"
+
                             step="1"
+
                             value="${item.quantity}"
+
                             data-index="${index}">
 
                     </td>
-
 
                     <td>
                         ${item.pack_unit}
                     </td>
 
-
                     <td>
-                        <span class="text-muted">
-                            FEFO
-                        </span>
+
+                        ${
+                            item.unit_price > 0
+
+                            ? formatMoney(item.unit_price)
+
+                            : '<span class="text-muted">Checking...</span>'
+                        }
+
                     </td>
 
-
                     <td>
-                        <span class="text-muted">
-                            FEFO
-                        </span>
-                    </td>
 
+                        ${
+                            item.subtotal > 0
+
+                            ? formatMoney(item.subtotal)
+
+                            : '<span class="text-muted">Checking...</span>'
+                        }
+
+                    </td>
 
                     <td class="text-center">
 
                         <button type="button"
+
                                 class="btn btn-sm btn-danger remove-item"
+
                                 data-index="${index}">
 
                             ×
@@ -548,83 +709,1090 @@
             });
 
 
-            // Number of items
+            /*
+            |----------------------------------------------------------------------
+            | Cart Count
+            |----------------------------------------------------------------------
+            */
+
             cartItemCount.textContent =
-                cart.length + (cart.length === 1 ? ' Item' : ' Items');
+
+                cart.length +
+
+                (
+                    cart.length === 1
+                        ? ' Item'
+                        : ' Items'
+                );
 
 
-            // Total
-            grandTotal.textContent = '0.00';
+            /*
+            |----------------------------------------------------------------------
+            | Generate Hidden Form Inputs
+            |----------------------------------------------------------------------
+            */
 
+            generateHiddenInputs();
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Attach Cart Events
+            |----------------------------------------------------------------------
+            */
 
             attachCartEvents();
 
+
+            /*
+            |----------------------------------------------------------------------
+            | Calculate FEFO Preview
+            |----------------------------------------------------------------------
+            */
+
+            calculatePreview();
+
         }
 
 
-        // Quantity and remove button events
-        function attachCartEvents()
-        {
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Hidden Cart Inputs
+        |--------------------------------------------------------------------------
+        |
+        | The cart exists in JavaScript only.
+        |
+        | Laravel cannot receive JavaScript variables directly when the form
+        | submits.
+        |
+        | Therefore we create:
+        |
+        | items[0][medicine_id]
+        | items[0][quantity]
+        |
+        | items[1][medicine_id]
+        | items[1][quantity]
+        |
+        | etc.
+        |
+        */
 
-            // Quantity change
-            document.querySelectorAll('.cart-quantity')
+        function generateHiddenInputs() {
+
+            /*
+            |----------------------------------------------------------------------
+            | Remove Previous Hidden Inputs
+            |----------------------------------------------------------------------
+            */
+
+            document
+                .querySelectorAll('.cart-hidden-input')
                 .forEach(function (input) {
 
-                    input.addEventListener('change', function () {
-
-                        const index =
-                            parseInt(this.dataset.index);
-
-                        const quantity =
-                            parseInt(this.value);
-
-
-                        if (!quantity || quantity < 1) {
-
-                            this.value =
-                                cart[index].quantity;
-
-                            return;
-                        }
-
-
-                        cart[index].quantity =
-                            quantity;
-
-
-                        renderCart();
-
-                    });
+                    input.remove();
 
                 });
 
 
-            // Remove medicine
-            document.querySelectorAll('.remove-item')
+            /*
+            |----------------------------------------------------------------------
+            | Create Inputs For Current Cart
+            |----------------------------------------------------------------------
+            */
+
+            cart.forEach(function (item, index) {
+
+                /*
+                |------------------------------------------------------------------
+                | Medicine ID
+                |------------------------------------------------------------------
+                */
+
+                const medicineInput =
+                    document.createElement('input');
+
+                medicineInput.type = 'hidden';
+
+                medicineInput.name =
+                    `items[${index}][medicine_id]`;
+
+                medicineInput.value =
+                    item.medicine_id;
+
+                medicineInput.classList.add(
+                    'cart-hidden-input'
+                );
+
+
+                /*
+                |------------------------------------------------------------------
+                | Quantity
+                |------------------------------------------------------------------
+                */
+
+                const quantityInput =
+                    document.createElement('input');
+
+                quantityInput.type = 'hidden';
+
+                quantityInput.name =
+                    `items[${index}][quantity]`;
+
+                quantityInput.value =
+                    item.quantity;
+
+                quantityInput.classList.add(
+                    'cart-hidden-input'
+                );
+
+
+                /*
+                |------------------------------------------------------------------
+                | Add To Form
+                |------------------------------------------------------------------
+                */
+
+                salesForm.appendChild(
+                    medicineInput
+                );
+
+                salesForm.appendChild(
+                    quantityInput
+                );
+
+            });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Attach Cart Events
+        |--------------------------------------------------------------------------
+        */
+
+        function attachCartEvents() {
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Quantity Change
+            |----------------------------------------------------------------------
+            */
+
+            document
+                .querySelectorAll('.cart-quantity')
+                .forEach(function (input) {
+
+                    input.addEventListener(
+                        'change',
+                        function () {
+
+                            const index =
+                                parseInt(
+                                    this.dataset.index
+                                );
+
+                            const quantity =
+                                parseInt(
+                                    this.value
+                                );
+
+
+                            /*
+                            |------------------------------------------------------------------
+                            | Validate Quantity
+                            |------------------------------------------------------------------
+                            */
+
+                            if (
+                                !quantity ||
+                                quantity < 1
+                            ) {
+
+                                this.value =
+                                    cart[index].quantity;
+
+                                return;
+                            }
+
+
+                            /*
+                            |------------------------------------------------------------------
+                            | Update Cart Quantity
+                            |------------------------------------------------------------------
+                            */
+
+                            cart[index].quantity =
+                                quantity;
+
+
+                            /*
+                            |------------------------------------------------------------------
+                            | Re-render Cart
+                            |------------------------------------------------------------------
+                            */
+
+                            renderCart();
+
+                        }
+                    );
+
+                });
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Remove Item
+            |----------------------------------------------------------------------
+            */
+
+            document
+                .querySelectorAll('.remove-item')
                 .forEach(function (button) {
 
-                    button.addEventListener('click', function () {
+                    button.addEventListener(
+                        'click',
+                        function () {
 
-                        const index =
-                            parseInt(this.dataset.index);
+                            const index =
+                                parseInt(
+                                    this.dataset.index
+                                );
 
 
-                        cart.splice(index, 1);
+                            /*
+                            |------------------------------------------------------------------
+                            | Remove Medicine
+                            |------------------------------------------------------------------
+                            */
+
+                            cart.splice(
+                                index,
+                                1
+                            );
 
 
-                        renderCart();
+                            /*
+                            |------------------------------------------------------------------
+                            | Re-render Cart
+                            |------------------------------------------------------------------
+                            */
 
-                    });
+                            renderCart();
+
+                        }
+                    );
 
                 });
 
         }
 
 
-        // Initial cart display
+        /*
+        |--------------------------------------------------------------------------
+        | FEFO Preview
+        |--------------------------------------------------------------------------
+        */
+
+        function calculatePreview() {
+
+
+            /*
+            |----------------------------------------------------------------------
+            | No Items
+            |----------------------------------------------------------------------
+            */
+
+            if (cart.length === 0) {
+
+                updateGrandTotal(0);
+
+                return;
+            }
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Prepare Cart Data
+            |----------------------------------------------------------------------
+            */
+
+            const items =
+                cart.map(function (item) {
+
+                    return {
+
+                        medicine_id:
+                            item.medicine_id,
+
+                        quantity:
+                            item.quantity
+
+                    };
+
+                });
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Send Cart To Laravel
+            |----------------------------------------------------------------------
+            */
+
+            fetch(
+                "{{ route('sales.preview') }}",
+                {
+
+                    method: 'POST',
+
+                    headers: {
+
+                        'Content-Type':
+                            'application/json',
+
+                        'Accept':
+                            'application/json',
+
+                        'X-CSRF-TOKEN':
+                            document
+                                .querySelector(
+                                    'meta[name="csrf-token"]'
+                                )
+                                .getAttribute(
+                                    'content'
+                                )
+
+                    },
+
+                    body:
+                        JSON.stringify({
+
+                            items: items
+
+                        })
+
+                }
+            )
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Read Response
+            |----------------------------------------------------------------------
+            */
+
+            .then(function (response) {
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        'Preview request failed.'
+                    );
+
+                }
+
+                return response.json();
+
+            })
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Process Response
+            |----------------------------------------------------------------------
+            */
+
+            .then(function (data) {
+
+
+                /*
+                |------------------------------------------------------------------
+                | Preview Failed
+                |------------------------------------------------------------------
+                */
+
+                if (!data.success) {
+
+                    alert(
+
+                        data.message ||
+
+                        'Unable to calculate FEFO.'
+
+                    );
+
+
+                    /*
+                    |--------------------------------------------------------------
+                    | Reset Prices
+                    |--------------------------------------------------------------
+                    */
+
+                    cart.forEach(
+                        function (item) {
+
+                            item.unit_price =
+                                0;
+
+                            item.subtotal =
+                                0;
+
+                        }
+                    );
+
+
+                    updateGrandTotal(0);
+
+                    renderCartWithoutPreview();
+
+                    return;
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Update Cart Prices
+                |------------------------------------------------------------------
+                */
+
+                if (data.items) {
+
+                    data.items.forEach(
+                        function (
+                            previewItem,
+                            index
+                        ) {
+
+                            if (cart[index]) {
+
+                                cart[index].unit_price =
+                                    Number(
+                                        previewItem.unit_price
+                                    ) || 0;
+
+                                cart[index].subtotal =
+                                    Number(
+                                        previewItem.subtotal
+                                    ) || 0;
+
+                            }
+
+                        }
+                    );
+
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Update Grand Total
+                |------------------------------------------------------------------
+                */
+
+                if (
+                    data.grand_total !==
+                    undefined
+                ) {
+
+                    updateGrandTotal(
+                        data.grand_total
+                    );
+
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Render Cart Without Preview
+                |------------------------------------------------------------------
+                */
+
+                renderCartWithoutPreview();
+
+
+                /*
+                |------------------------------------------------------------------
+                | Make Sure Hidden Inputs Are Current
+                |------------------------------------------------------------------
+                */
+
+                generateHiddenInputs();
+
+
+                /*
+                |------------------------------------------------------------------
+                | Recalculate Change
+                |------------------------------------------------------------------
+                */
+
+                calculateChange();
+
+            })
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Handle Error
+            |----------------------------------------------------------------------
+            */
+
+            .catch(function (error) {
+
+                console.error(
+                    'FEFO Preview Error:',
+                    error
+                );
+
+
+                updateGrandTotal(0);
+
+
+                alert(
+                    'Unable to calculate the sale. Please try again.'
+                );
+
+            });
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Render Cart Without Calling Preview Again
+        |--------------------------------------------------------------------------
+        */
+
+        function renderCartWithoutPreview() {
+
+            cartBody.innerHTML = '';
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Empty Cart
+            |----------------------------------------------------------------------
+            */
+
+            if (cart.length === 0) {
+
+                cartBody.innerHTML = `
+
+                    <tr id="emptyCartRow">
+
+                        <td colspan="7"
+                            class="text-center text-muted py-4">
+
+                            No medicines added to the sale.
+
+                        </td>
+
+                    </tr>
+
+                `;
+
+
+                cartItemCount.textContent =
+                    '0 Items';
+
+
+                generateHiddenInputs();
+
+                return;
+            }
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Display Items
+            |----------------------------------------------------------------------
+            */
+
+            cart.forEach(function (item, index) {
+
+                const row =
+                    document.createElement('tr');
+
+
+                row.innerHTML = `
+
+                    <td>
+                        ${index + 1}
+                    </td>
+
+                    <td>
+                        <strong>
+                            ${item.name}
+                        </strong>
+                    </td>
+
+                    <td>
+
+                        <input type="number"
+
+                            class="form-control form-control-sm cart-quantity"
+
+                            min="1"
+
+                            step="1"
+
+                            value="${item.quantity}"
+
+                            data-index="${index}">
+
+                    </td>
+
+                    <td>
+                        ${item.pack_unit}
+                    </td>
+
+                    <td>
+
+                        ${
+                            item.unit_price > 0
+
+                            ? formatMoney(
+                                item.unit_price
+                            )
+
+                            : '0'
+                        }
+
+                    </td>
+
+                    <td>
+
+                        ${
+                            item.subtotal > 0
+
+                            ? formatMoney(
+                                item.subtotal
+                            )
+
+                            : '0'
+                        }
+
+                    </td>
+
+                    <td class="text-center">
+
+                        <button type="button"
+
+                                class="btn btn-sm btn-danger remove-item"
+
+                                data-index="${index}">
+
+                            ×
+
+                        </button>
+
+                    </td>
+
+                `;
+
+
+                cartBody.appendChild(row);
+
+            });
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Cart Count
+            |----------------------------------------------------------------------
+            */
+
+            cartItemCount.textContent =
+
+                cart.length +
+
+                (
+                    cart.length === 1
+                        ? ' Item'
+                        : ' Items'
+                );
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Reattach Events
+            |----------------------------------------------------------------------
+            */
+
+            attachCartEvents();
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Keep Hidden Inputs Updated
+            |----------------------------------------------------------------------
+            */
+
+            generateHiddenInputs();
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Update Grand Total
+        |--------------------------------------------------------------------------
+        */
+
+        function updateGrandTotal(total) {
+
+            /*
+            |----------------------------------------------------------------------
+            | Store Actual Numeric Total
+            |----------------------------------------------------------------------
+            */
+
+            currentTotal =
+                Number(total) || 0;
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Format For Display
+            |----------------------------------------------------------------------
+            */
+
+            const formattedTotal =
+                formatMoney(currentTotal);
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Update Cart Total
+            |----------------------------------------------------------------------
+            */
+
+            grandTotal.textContent =
+                formattedTotal;
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Update Payment Total
+            |----------------------------------------------------------------------
+            */
+
+            paymentTotal.textContent =
+                formattedTotal;
+
+
+            /*
+            |----------------------------------------------------------------------
+            | Recalculate Change
+            |----------------------------------------------------------------------
+            */
+
+            calculateChange();
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Calculate Change
+        |--------------------------------------------------------------------------
+        */
+
+        function calculateChange() {
+
+            const total =
+                currentTotal;
+
+
+            const paid =
+                parseFloat(
+                    paymentAmount.value
+                ) || 0;
+
+
+            /*
+            |----------------------------------------------------------------------
+            | CASH
+            |----------------------------------------------------------------------
+            */
+
+            if (
+                paymentMethod.value ===
+                'CASH'
+            ) {
+
+                const change =
+                    paid - total;
+
+
+                if (change >= 0) {
+
+                    changeAmount.textContent =
+                        formatMoney(change);
+
+                }
+
+                else {
+
+                    changeAmount.textContent =
+                        '0';
+
+                }
+
+            }
+
+
+            /*
+            |----------------------------------------------------------------------
+            | ELECTRONIC PAYMENT
+            |----------------------------------------------------------------------
+            */
+
+            else {
+
+                changeAmount.textContent =
+                    '0';
+
+            }
+
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Amount Changed
+        |--------------------------------------------------------------------------
+        */
+
+        paymentAmount.addEventListener(
+            'input',
+            function () {
+
+                calculateChange();
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payment Method Changed
+        |--------------------------------------------------------------------------
+        */
+
+        paymentMethod.addEventListener(
+            'change',
+            function () {
+
+                calculateChange();
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Payment Before Sale
+        |--------------------------------------------------------------------------
+        */
+
+        salesForm.addEventListener(
+            'submit',
+            function (event) {
+
+                const total =
+                    currentTotal;
+
+
+                const paid =
+                    parseFloat(
+                        paymentAmount.value
+                    ) || 0;
+
+
+                const method =
+                    paymentMethod.value;
+
+
+                /*
+                |------------------------------------------------------------------
+                | Make Absolutely Sure Hidden Cart Inputs Exist
+                |------------------------------------------------------------------
+                */
+
+                generateHiddenInputs();
+
+
+                /*
+                |------------------------------------------------------------------
+                | Validate Cart
+                |------------------------------------------------------------------
+                */
+
+                if (cart.length === 0) {
+
+                    event.preventDefault();
+
+                    alert(
+                        'Please add at least one medicine to the sale.'
+                    );
+
+                    return;
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Validate Total
+                |------------------------------------------------------------------
+                */
+
+                if (total <= 0) {
+
+                    event.preventDefault();
+
+                    alert(
+                        'The sale total is not available. Please wait for the FEFO preview to complete.'
+                    );
+
+                    return;
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Validate Payment Method
+                |------------------------------------------------------------------
+                */
+
+                if (!method) {
+
+                    event.preventDefault();
+
+                    alert(
+                        'Please select a payment method.'
+                    );
+
+                    paymentMethod.focus();
+
+                    return;
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Validate Amount
+                |------------------------------------------------------------------
+                */
+
+                if (paid <= 0) {
+
+                    event.preventDefault();
+
+                    alert(
+                        'Please enter the amount paid.'
+                    );
+
+                    paymentAmount.focus();
+
+                    return;
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | CASH PAYMENT
+                |------------------------------------------------------------------
+                */
+
+                if (method === 'CASH') {
+
+                    if (paid < total) {
+
+                        event.preventDefault();
+
+                        alert(
+                            'Amount paid cannot be less than the sale total.'
+                        );
+
+                        paymentAmount.focus();
+
+                        return;
+                    }
+
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | ELECTRONIC PAYMENT
+                |------------------------------------------------------------------
+                */
+
+                else {
+
+                    if (
+                        paid.toFixed(2) !==
+                        total.toFixed(2)
+                    ) {
+
+                        event.preventDefault();
+
+                        alert(
+                            'For ' +
+                            method.replace('_', ' ') +
+                            ', the amount paid must exactly equal the sale total.'
+                        );
+
+                        paymentAmount.focus();
+
+                        return;
+                    }
+
+                }
+
+
+                /*
+                |------------------------------------------------------------------
+                | Prevent Double Submission
+                |------------------------------------------------------------------
+                */
+
+                if (completeSaleButton) {
+
+                    completeSaleButton.disabled =
+                        true;
+
+                    completeSaleButton.innerHTML =
+                        'Processing Sale...';
+
+                }
+
+            }
+        );
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Initial Cart Render
+        |--------------------------------------------------------------------------
+        */
+
         renderCart();
 
-});
+
+        /*
+        |--------------------------------------------------------------------------
+        | Initial Payment Calculation
+        |--------------------------------------------------------------------------
+        */
+
+        calculateChange();
+
+    });
+
 </script>
+```
+
 
 </html>
