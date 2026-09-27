@@ -71,7 +71,7 @@ Route::get('/medicine/batches/fefo', [MedicineBatchController::class, 'testFefo'
 Route::get('pos/sales', [SalesController::class, 'index'])->name('sales.index');
 Route::get('pos/sales/create', [SalesController::class, 'create'])->name('sales.create');
 Route::post('pos/sales/', [SalesController::class, 'store'])->name('sales.store');
-Route::get('pos/sales/{sales}', [SalesController::class, 'show'])->name('sales.show');
+Route::get('pos/sales/{sale}', [SalesController::class, 'show'])->name('sales.show');
 Route::post('pos/sales/preview', [SalesController::class, 'preview'])->name('sales.preview');
 
 require __DIR__.'/auth.php';

@@ -19,9 +19,60 @@ use Illuminate\Validation\ValidationException;
 
 class SalesController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('sales.index');
+        $sales = Sale::with([
+            'creator',
+            'payment',
+            'items'
+        ])
+
+        // Invoice / General Search
+        ->when($request->search, function ($query) use ($request) {
+            $query->where(
+                'invoice_number',
+                'like',
+                '%' . $request->search . '%'
+            );
+        })
+
+        // From Date
+        ->when($request->from_date, function ($query) use($request) {
+            $query->whereDate(
+                'created_at',
+                '>=',
+                $request->from_date
+            );
+        })
+
+        // To Date
+        ->when($request->to_date, function($query) use($request) {
+            $query->whereDate(
+                'created_at',
+                '<=',
+                $request->to_date
+            );
+        })
+
+        // Payment Method
+        ->when($request->payment_method, function ($query) use ($request) {
+
+            $query->whereHas('payment', function ($paymentQuery) use ($request) {
+
+                $paymentQuery->where(
+                    'payment_method',
+                    $request->payment_method
+                );
+
+            });
+
+        })
+        
+        ->latest()
+        ->paginate(10)
+        ->withQueryString();
+
+        return view('sales.index', compact('sales'));
     }
 
     public function create()
@@ -476,6 +527,7 @@ class SalesController extends Controller
 
                     $packQuantity = (int) $item['quantity'];
 
+
                     /*
                     |--------------------------------------------------------------------------
                     | Get FEFO batches
@@ -492,6 +544,7 @@ class SalesController extends Controller
 
 
                     if ($batches->isEmpty()) {
+
                         throw new \Exception(
                             "No available stock for {$medicine->name}."
                         );
@@ -507,6 +560,7 @@ class SalesController extends Controller
                     $unitsPerPack = (int) $medicine->units_per_pack;
 
                     if ($unitsPerPack <= 0) {
+
                         throw new \Exception(
                             "Invalid units per pack for {$medicine->name}."
                         );
@@ -519,7 +573,8 @@ class SalesController extends Controller
                     |--------------------------------------------------------------------------
                     */
 
-                    $requiredBaseUnits = $packQuantity * $unitsPerPack;
+                    $requiredBaseUnits =
+                        $packQuantity * $unitsPerPack;
 
 
                     /*
@@ -529,7 +584,9 @@ class SalesController extends Controller
                     */
 
                     $availableBaseUnits = $batches->sum(function ($batch) {
+
                         return (int) $batch->quantity;
+
                     });
 
 
@@ -545,19 +602,144 @@ class SalesController extends Controller
 
                     /*
                     |--------------------------------------------------------------------------
-                    | Use the first FEFO batch price
+                    | CALCULATE PRICE USING FEFO BATCHES
                     |--------------------------------------------------------------------------
                     |
-                    | The selling price is stored per pack.
+                    | We calculate the amount from each batch separately because
+                    | different batches can have different selling prices.
                     |
                     */
 
-                    $sellingPrice = (float) $batches->first()->selling_price;
+                    $remainingBaseUnits = $requiredBaseUnits;
+
+                    $itemTotal = 0;
+
+                    $batchAllocations = [];
 
 
-                    $subtotal = $packQuantity * $sellingPrice;
+                    foreach ($batches as $batch) {
 
-                    $grandTotal += $subtotal;
+                        if ($remainingBaseUnits <= 0) {
+                            break;
+                        }
+
+
+                        $batchAvailable = (int) $batch->quantity;
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Determine units taken from this batch
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $allocatedBaseUnits = min(
+                            $remainingBaseUnits,
+                            $batchAvailable
+                        );
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Convert base units to packs
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $allocatedPacks =
+                            $allocatedBaseUnits / $unitsPerPack;
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Get this batch's selling price
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $batchSellingPrice =
+                            (float) $batch->selling_price;
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Calculate this batch's amount
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $batchSubtotal =
+                            $allocatedPacks * $batchSellingPrice;
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Add to item total
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $itemTotal += $batchSubtotal;
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Store batch allocation for later
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $batchAllocations[] = [
+                            'batch' => $batch,
+                            'allocated_base_units' => $allocatedBaseUnits,
+                            'allocated_packs' => $allocatedPacks,
+                            'unit_price' => $batchSellingPrice,
+                            'subtotal' => $batchSubtotal,
+                        ];
+
+
+                        /*
+                        |--------------------------------------------------------------------------
+                        | Update remaining units
+                        |--------------------------------------------------------------------------
+                        */
+
+                        $remainingBaseUnits -= $allocatedBaseUnits;
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Safety Check
+                    |--------------------------------------------------------------------------
+                    */
+
+                    if ($remainingBaseUnits > 0) {
+
+                        throw new \Exception(
+                            "Unable to allocate complete stock for {$medicine->name}."
+                        );
+                    }
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Calculate effective unit price
+                    |--------------------------------------------------------------------------
+                    |
+                    | sale_items has only one unit_price field.
+                    |
+                    | When multiple batches have different prices, we store
+                    | the weighted average price here.
+                    |
+                    */
+
+                    $effectiveUnitPrice =
+                        $itemTotal / $packQuantity;
+
+
+                    /*
+                    |--------------------------------------------------------------------------
+                    | Add to grand total
+                    |--------------------------------------------------------------------------
+                    */
+
+                    $grandTotal += $itemTotal;
 
 
                     /*
@@ -570,9 +752,14 @@ class SalesController extends Controller
                         'medicine' => $medicine,
                         'pack_quantity' => $packQuantity,
                         'required_base_units' => $requiredBaseUnits,
-                        'selling_price' => $sellingPrice,
-                        'subtotal' => $subtotal,
-                        'batches' => $batches,
+
+                        // Weighted average price
+                        'selling_price' => $effectiveUnitPrice,
+
+                        'subtotal' => $itemTotal,
+
+                        // Actual FEFO allocations
+                        'batch_allocations' => $batchAllocations,
                     ];
                 }
 
@@ -609,9 +796,6 @@ class SalesController extends Controller
 
                     $medicine = $cartItem['medicine'];
 
-                    $remainingBaseUnits =
-                        $cartItem['required_base_units'];
-
 
                     /*
                     |--------------------------------------------------------------------------
@@ -623,38 +807,26 @@ class SalesController extends Controller
                         'sale_id' => $sale->id,
                         'medicine_id' => $medicine->id,
                         'quantity' => $cartItem['pack_quantity'],
+
+                        // Weighted average price
                         'unit_price' => $cartItem['selling_price'],
+
                         'subtotal' => $cartItem['subtotal'],
                     ]);
 
 
                     /*
                     |--------------------------------------------------------------------------
-                    | 8. FEFO BATCH ALLOCATION
+                    | 8. PROCESS FEFO BATCH ALLOCATIONS
                     |--------------------------------------------------------------------------
                     */
 
-                    foreach ($cartItem['batches'] as $batch) {
+                    foreach ($cartItem['batch_allocations'] as $allocation) {
 
-                        if ($remainingBaseUnits <= 0) {
-                            break;
-                        }
+                        $batch = $allocation['batch'];
 
-
-                        $batchAvailable =
-                            (int) $batch->quantity;
-
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Amount taken from this batch
-                        |--------------------------------------------------------------------------
-                        */
-
-                        $allocatedBaseUnits = min(
-                            $remainingBaseUnits,
-                            $batchAvailable
-                        );
+                        $allocatedBaseUnits =
+                            $allocation['allocated_base_units'];
 
 
                         /*
@@ -662,6 +834,9 @@ class SalesController extends Controller
                         | Deduct stock
                         |--------------------------------------------------------------------------
                         */
+
+                        $batchAvailable =
+                            (int) $batch->quantity;
 
                         $batch->quantity =
                             $batchAvailable - $allocatedBaseUnits;
@@ -673,13 +848,20 @@ class SalesController extends Controller
                         |--------------------------------------------------------------------------
                         | Create Sale Item Batch
                         |--------------------------------------------------------------------------
+                        |
+                        | IMPORTANT:
+                        | Store the ACTUAL selling price of this batch.
+                        |
                         */
 
                         SaleItemBatch::create([
                             'sale_item_id' => $saleItem->id,
                             'medicine_batch_id' => $batch->id,
+
                             'quantity' => $allocatedBaseUnits,
-                            'unit_price' => $cartItem['selling_price'],
+
+                            // Actual batch selling price
+                            'unit_price' => $allocation['unit_price'],
                         ]);
 
 
@@ -698,29 +880,6 @@ class SalesController extends Controller
                             'notes' => 'Medicine sold - FEFO allocation',
                             'created_by' => Auth::id(),
                         ]);
-
-
-                        /*
-                        |--------------------------------------------------------------------------
-                        | Update remaining quantity
-                        |--------------------------------------------------------------------------
-                        */
-
-                        $remainingBaseUnits -= $allocatedBaseUnits;
-                    }
-
-
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Safety Check
-                    |--------------------------------------------------------------------------
-                    */
-
-                    if ($remainingBaseUnits > 0) {
-
-                        throw new \Exception(
-                            "Unable to allocate complete stock for {$medicine->name}."
-                        );
                     }
                 }
 
@@ -813,5 +972,17 @@ class SalesController extends Controller
 
 
         return $invoiceNumber;
+    }
+
+    public function show(Sale $sale)
+    {
+        $sale->load([
+            'creator',
+            'items.medicine',
+            'items.batches.medicineBatch',
+            'payment'
+        ]);
+
+        return view('sales.show', compact('sale'));
     }
 }
