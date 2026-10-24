@@ -13,10 +13,37 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
+        <style>
+            #pageLoader {
+                position: fixed;
+                inset: 0;
+                background: rgba(255, 255, 255, 0.75);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+            }
+
+            #pageLoader.hidden {
+                display: none;
+            }
+        </style>
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased">
+
+        <!-- Page Loader -->
+        @include('layouts.loader')
+
+        <!-- Global Page Loader -->
+        <div id="pageLoader">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
         <div class="min-h-screen bg-gray-100">
             @include('layouts.navigation')
 
@@ -39,4 +66,7 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     </body>
+
+    @include('layouts.loader_js')
+
 </html>

@@ -11,6 +11,7 @@ class MedicineBatch extends Model
     protected $fillable = [
         'medicine_id',
         'batch_number',
+        'supplier_batch_number',
         'manufactured_at',
         'expires_at',
         'purchase_price',

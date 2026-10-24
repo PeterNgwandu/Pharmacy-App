@@ -16,12 +16,35 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap"
           rel="stylesheet" />
 
+    <style>
+        #pageLoader {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        #pageLoader.hidden {
+            display: none;
+        }
+    </style>
+
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 
 <body class="font-sans antialiased">
+
+    <!-- Page Loader -->
+    <div id="pageLoader">
+        <div class="spinner-grow text-success" role="status">
+            <span class="sr-only visually-hidden">Loading...</span>
+        </div>
+    </div>
 
     <div class="min-h-screen bg-gray-100">
 
@@ -178,7 +201,7 @@
 
 
                             <p class="m-3"> 
-                                <span> <a href="" class="btn btn-sm btn-success"> Print Invoice </a> </span> 
+                                <span> <a href="{{ route('sales.print', $sale->id) }}" target="_blank" class="btn btn-sm btn-success"> Print Invoice </a> </span> 
                                 <span> <a href="{{ route('sales.create') }}" class="btn btn-sm btn-secondary"> New Sale </a> </span>
                                 <span> <a href="{{ route('sales.index') }}" class="btn btn-sm btn-primary"> Sales List </a> </span>
                             </p>
@@ -196,5 +219,23 @@
 
 
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const loader = document.getElementById('pageLoader');
+
+        if (loader) {
+            loader.classList.add('hidden');
+        }
+    });
+
+    window.addEventListener('beforeunload', function () {
+        const loader = document.getElementById('pageLoader');
+
+        if (loader) {
+            loader.classList.remove('hidden');
+        }
+    });
+</script>
 
 </html>

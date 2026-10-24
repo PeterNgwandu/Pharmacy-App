@@ -171,7 +171,7 @@
                                         <td>{{ $sale->payment->payment_method }}</td>
                                         <td>{{ $sale->creator->name }}</td>
                                         <td>
-                                            <a class="btn btn-sm btn-success" href="{{ route('sales.show', $sale->id) }}">View Sale</a>
+                                            <a class="btn btn-sm btn-outline-success" href="{{ route('sales.show', $sale->id) }}">View Sale</a>
                                         </td>
                                     </tr>
                                 

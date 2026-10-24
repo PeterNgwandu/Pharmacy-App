@@ -134,5 +134,23 @@ window.confirmDeleteMedicineBatch = function (id) {
 }
 
 
+// Delete Supplier
+window.confirmDeleteSupplier = function (id) {
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "This supplier will be permanently deleted!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            document.getElementById('delete-supplier-' + id).submit();
+        }
+    });
+}
+
+
 
 

@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\ValidationException;
 
 class SalesController extends Controller
@@ -984,5 +985,33 @@ class SalesController extends Controller
         ]);
 
         return view('sales.show', compact('sale'));
+    }
+
+    public function print(Sale $sale)
+    {
+        $sale->load([
+            'creator',
+            'items.medicine',
+            'items.batches.medicineBatch',
+            'payment'
+        ]);
+
+        return view('sales.print', compact('sale'));
+    }
+
+    public function downloadPdf(Sale $sale)
+    {
+        $sale->load([
+            'creator',
+            'items.medicine',
+            'items.batches.medicineBatch',
+            'payment'
+        ]);
+
+        $pdf = Pdf::loadView('sales.print', compact('sale'));
+
+        $filename = $sale->invoice_number . '.pdf';
+
+        return $pdf->download($filename);
     }
 }

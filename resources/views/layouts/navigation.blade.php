@@ -51,8 +51,12 @@
                         Supplier and Purchasing
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ route('users.index') }}">Medicine Master</a></li>
-                        <li><a class="dropdown-item" href="{{ route('users.create') }}">Manage Category & Dosage Form</a></li>
+                        <li><a class="dropdown-item" href="{{ route('suppliers.create') }}">Create Supplier</a></li>
+                        <li><a class="dropdown-item" href="{{ route('suppliers.index') }}">Suppliers Listings</a></li>
+                        <hr>
+                        <li><a class="dropdown-item" href="{{ route('purchases.create') }}">Create Purchase</a></li>
+                        <li><a class="dropdown-item" href="{{ route('purchases.index') }}">Purchase Listings</a></li>
+                        <li><a class="dropdown-item" href="{{ route('supplier_accounts.index') }}">Suppliers Accounts</a></li>
                     </ul>
                 </div>
 

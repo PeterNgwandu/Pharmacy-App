@@ -5,7 +5,11 @@ use App\Http\Controllers\DosageFormController;
 use App\Http\Controllers\MedicineBatchController;
 use App\Http\Controllers\MedicineController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PurchaseController;
 use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\SupplierAccountController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SalesController;
 use App\Models\StockMovement;
@@ -73,5 +77,29 @@ Route::get('pos/sales/create', [SalesController::class, 'create'])->name('sales.
 Route::post('pos/sales/', [SalesController::class, 'store'])->name('sales.store');
 Route::get('pos/sales/{sale}', [SalesController::class, 'show'])->name('sales.show');
 Route::post('pos/sales/preview', [SalesController::class, 'preview'])->name('sales.preview');
+Route::get('pos/sales/{sale}/print', [SalesController::class, 'print'])->name('sales.print');
+Route::get('/sales/{sale}/download-pdf', [SalesController::class, 'downloadPdf'])->name('sales.downloadPdf');
+
+// Suppliers
+Route::get('system/supplier', [SupplierController::class, 'create'])->name('suppliers.create');
+Route::post('system/supplier/create', [SupplierController::class, 'store'])->name('suppliers.store');
+Route::get('system/suppliers/listing', [SupplierController::class, 'index'])->name('suppliers.index');
+Route::get('system/suppliers/edit/{supplier}', [SupplierController::class, 'edit'])->name('suppliers.edit');
+Route::get('system/suppliers/{supplier}', [SupplierController::class, 'show'])->name('suppliers.show');
+Route::put('system/suppliers/update/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
+Route::delete('system/suppliers/delete/{supplier}', [SupplierController::class, 'destroy'])->name('supplier.destroy');
+
+// Purchases
+Route::get('system/purchases', [PurchaseController::class, 'index'])->name('purchases.index');
+Route::get('system/purchase/create', [PurchaseController::class, 'create'])->name('purchases.create');
+Route::get('system/purchases/purchase/{purchase}', [PurchaseController::class, 'show'])->name('purchases.show');
+Route::post('system/purchases/purchase/store', [PurchaseController::class, 'store'])->name('purchases.store');
+Route::post('system/purchases/{purchase}/receive', [PurchaseController::class, 'receive'])->name('purchases.receive');
+
+// Supplier purchases payments
+Route::post('system/purchases/{purchase}/payments', [SupplierPaymentController::class, 'store'])->name('supplier_payments.store');
+
+// Supplier Accounts
+Route::get('system/supplier-accounts', [SupplierAccountController::class, 'index'])->name('supplier_accounts.index');
 
 require __DIR__.'/auth.php';
